@@ -307,6 +307,13 @@ TEST_CASE("getenv") {
     CHECK_EQ(hilti::rt::getenv("SPICY_TEST_ENV_DOES_NOT_EXIST"), std::nullopt);
 }
 
+TEST_CASE("hash_combine") {
+    CHECK_EQ(hashCombine(0, 0), 0);
+    CHECK_EQ(hashCombine(1, 0), 1);
+    CHECK_EQ(hashCombine(0, 1), 2);
+    CHECK_EQ(hashCombine(1, 1), 3);
+}
+
 TEST_CASE("isDebugVersion") {
 #ifndef NDEBUG
     CHECK(isDebugVersion());
