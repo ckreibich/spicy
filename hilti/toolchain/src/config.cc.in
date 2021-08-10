@@ -168,3 +168,56 @@ Configuration& hilti::configuration() {
     static Configuration singleton;
     return singleton;
 }
+
+namespace std {
+template<>
+struct hash<hilti::Configuration> {
+    std::size_t operator()(const hilti::Configuration& config) const {
+        std::hash<std::string> hasher;
+
+        std::size_t hash = 0;
+
+        hash = rt::hashCombine(hash, hasher(config.build_directory));
+        hash = rt::hashCombine(hash, hasher(config.compiler_id));
+        hash = rt::hashCombine(hash, hasher(config.cxx));
+        hash = rt::hashCombine(hash, hasher(config.distbase));
+        for ( const auto& path : config.hilti_library_paths )
+            hash = rt::hashCombine(hash, hasher(path));
+        hash = rt::hashCombine(hash, hasher(config.hiltic));
+        for ( const auto& flag : config.hlto_cxx_flags_debug )
+            hash = rt::hashCombine(hash, hasher(flag));
+        for ( const auto& flag : config.hlto_cxx_flags_release )
+            hash = rt::hashCombine(hash, hasher(flag));
+        for ( const auto& flag : config.hlto_ld_flags_debug )
+            hash = rt::hashCombine(hash, hasher(flag));
+        for ( const auto& flag : config.hlto_ld_flags_release )
+            hash = rt::hashCombine(hash, hasher(flag));
+        hash = rt::hashCombine(hash, hasher(config.install_prefix));
+        hash = rt::hashCombine(hash, hasher(config.lib_directory));
+        for ( const auto& flag : config.runtime_cxx_flags_debug )
+            hash = rt::hashCombine(hash, hasher(flag));
+        for ( const auto& flag : config.runtime_cxx_flags_release )
+            hash = rt::hashCombine(hash, hasher(flag));
+        for ( const auto& path : config.runtime_cxx_include_paths )
+            hash = rt::hashCombine(hash, hasher(path));
+        for ( const auto& path : config.runtime_cxx_library_paths )
+            hash = rt::hashCombine(hash, hasher(path));
+        for ( const auto& flag : config.runtime_ld_flags_debug )
+            hash = rt::hashCombine(hash, hasher(flag));
+        for ( const auto& flag : config.runtime_ld_flags_release )
+            hash = rt::hashCombine(hash, hasher(flag));
+        for ( const auto& path : config.toolchain_cxx_include_paths )
+            hash = rt::hashCombine(hash, hasher(path));
+        for ( const auto& path : config.toolchain_cxx_library_paths )
+            hash = rt::hashCombine(hash, hasher(path));
+        hash = rt::hashCombine(hash, config.uses_build_directory);
+        hash = rt::hashCombine(hash, config.version_number);
+        hash = rt::hashCombine(hash, hasher(config.version_string));
+        hash = rt::hashCombine(hash, hasher(config.version_string_long));
+
+        return hash;
+    }
+};
+} // namespace std
+
+std::size_t Configuration::hash() const { return std::hash<hilti::Configuration>{}(*this); }
