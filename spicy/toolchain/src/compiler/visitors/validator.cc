@@ -763,29 +763,16 @@ struct PreservedVisitor : public hilti::visitor::PreOrder<void, PreservedVisitor
         return ctor.as<hilti::ctor::Tuple>().value()[i];
     }
 
-    void operator()(const operator_::sink::Connect& n, position_t p) {
-        if ( auto x = n.op0().type().originalNode()->tryAs<type::Unit>(); x && ! x->supportsSinks() )
-            error("unit type does not support sinks", p);
-    }
-
     void operator()(const operator_::sink::ConnectMIMETypeBytes& n, position_t p) {
-        if ( auto x = n.op0().type().originalNode()->tryAs<type::Unit>() ) {
-            if ( ! x->supportsSinks() )
-                error("unit type does not support sinks", p);
-
+        if ( auto x = n.op0().type().originalNode()->tryAs<type::Unit>() )
             if ( x->parameters().size() )
                 error("unit types with parameters cannot be connected through MIME type", p);
-        }
     }
 
     void operator()(const operator_::sink::ConnectMIMETypeString& n, position_t p) {
-        if ( auto x = n.op0().type().originalNode()->tryAs<type::Unit>() ) {
-            if ( ! x->supportsSinks() )
-                error("unit type does not support sinks", p);
-
+        if ( auto x = n.op0().type().originalNode()->tryAs<type::Unit>() )
             if ( x->parameters().size() )
                 error("unit types with parameters cannot be connected through MIME type", p);
-        }
     }
 
     void operator()(const operator_::unit::ConnectFilter& n, position_t p) {

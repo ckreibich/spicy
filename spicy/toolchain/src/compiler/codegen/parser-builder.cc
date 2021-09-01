@@ -368,14 +368,13 @@ struct ProductionVisitor
                 // implemented) by the struct that unit-builder is
                 // declaring.
                 if ( unit && unit->supportsFilters() ) {
-                    addParseMethod(id_stage1.str() != "__parse_stage1", id_stage1, build_parse_stage1(), true,
-                                   addl_param, p.location());
-                    addParseMethod(true, id_stage2, build_parse_stage12_or_stage2(false), true, addl_param,
+                    addParseMethod(id_stage1.str() != "__parse_stage1", id_stage1, build_parse_stage1(), addl_param,
                                    p.location());
+                    addParseMethod(true, id_stage2, build_parse_stage12_or_stage2(false), addl_param, p.location());
                 }
                 else
                     addParseMethod(id_stage1.str() != "__parse_stage1", id_stage1, build_parse_stage12_or_stage2(true),
-                                   false, addl_param, p.location());
+                                   addl_param, p.location());
 
                 return id_stage1;
             });
@@ -902,11 +901,17 @@ struct ProductionVisitor
 
     // Adds a method, and its implementation, to the current parsing struct
     // type that has the standard signature for parse methods.
-    void addParseMethod(bool add_decl, const ID& id, Statement body, bool always_emit = false,
+    void addParseMethod(bool add_decl, const ID& id, Statement body,
                         std::optional<type::function::Parameter> addl_param = {}, const Meta& m = {}) {
         auto qualified_id = pb->state().unit_id + id;
 
-        const auto attributes = always_emit ? AttributeSet({Attribute("&always-emit")}) : AttributeSet();
+        // References to parser methods can end up in e.g., `ComputeNode`s. Due
+        // to that the optimizer cannot see all uses of them and might remove
+        // them incorrectly as unused Prevent that by forcing them to always be
+        // emitted.
+        //
+        // TODO(bbannier): After #984 is merged we should be able to remove this attribute.
+        const auto attributes = AttributeSet({Attribute("&always-emit")});
 
         auto ftype = pb->parseMethodFunctionType(std::move(addl_param), m);
         auto func = builder::function(qualified_id, ftype, std::move(body), declaration::Linkage::Struct,
@@ -1286,8 +1291,7 @@ std::shared_ptr<hilti::builder::Builder> ParserBuilder::pushBuilder() {
     return _builders.back();
 }
 
-hilti::type::Struct ParserBuilder::addParserMethods(hilti::type::Struct s, const type::Unit& t, bool declare_only,
-                                                    bool always_emit) {
+hilti::type::Struct ParserBuilder::addParserMethods(hilti::type::Struct s, const type::Unit& t, bool declare_only) {
     auto [id_ext_overload1, id_ext_overload2, id_ext_overload3, id_ext_context_new] = parseMethodIDs(t);
 
     std::vector<type::function::Parameter> params =
@@ -1295,8 +1299,13 @@ hilti::type::Struct ParserBuilder::addParserMethods(hilti::type::Struct s, const
          builder::parameter("cur", type::Optional(type::stream::View()), builder::optional(type::stream::View())),
          builder::parameter("context", type::Optional(builder::typeByID("spicy_rt::UnitContext")))};
 
-    auto attr_ext_overload = always_emit ? AttributeSet({Attribute("&static"), Attribute("&always-emit")}) :
-                                           AttributeSet({Attribute("&static")});
+    // References to parser methods can end up in e.g., `ComputeNode`s. Due
+    // to that the optimizer cannot see all uses of them and might remove
+    // them incorrectly as unused Prevent that by forcing them to always be
+    // emitted.
+    //
+    // TODO(bbannier): After #984 is merged we should be able to remove this attribute.
+    auto attr_ext_overload = AttributeSet({Attribute("&static"), Attribute("&always-emit")});
 
     auto f_ext_overload1_result = type::stream::View();
     auto f_ext_overload1 = builder::function(id_ext_overload1, f_ext_overload1_result, std::move(params),
