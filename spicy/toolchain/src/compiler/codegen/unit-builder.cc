@@ -281,71 +281,67 @@ Type CodeGen::compileUnit(const type::Unit& unit, bool declare_only) {
     s = type::setTypeID(s, *unit.typeID());
     s = _pb.addParserMethods(s.as<hilti::type::Struct>(), unit, declare_only);
 
-    if ( unit.isPublic() || unit.isFilter() ) {
-        auto builder = builder::Builder(context());
-        auto description = unit.propertyItem("%description");
-        auto mime_types = hilti::util::transform(unit.propertyItems("%mime-type"), [](auto p) {
-            return builder::library_type_value(*p.expression(), "spicy_rt::MIMEType");
-        });
-        auto ports = hilti::util::transform(unit.propertyItems("%port"), [](auto p) {
-            auto dir = builder::id("spicy_rt::Direction::Both");
+    auto builder = builder::Builder(context());
+    auto description = unit.propertyItem("%description");
+    auto mime_types = hilti::util::transform(unit.propertyItems("%mime-type"), [](auto p) {
+        return builder::library_type_value(*p.expression(), "spicy_rt::MIMEType");
+    });
+    auto ports = hilti::util::transform(unit.propertyItems("%port"), [](auto p) {
+        auto dir = builder::id("spicy_rt::Direction::Both");
 
-            if ( const auto& attrs = p.attributes() ) {
-                auto orig = attrs->find("&originator");
-                auto resp = attrs->find("&responder");
+        if ( const auto& attrs = p.attributes() ) {
+            auto orig = attrs->find("&originator");
+            auto resp = attrs->find("&responder");
 
-                if ( orig && ! resp )
-                    dir = builder::id("spicy_rt::Direction::Originator");
+            if ( orig && ! resp )
+                dir = builder::id("spicy_rt::Direction::Originator");
 
-                else if ( resp && ! orig )
-                    dir = builder::id("spicy_rt::Direction::Responder");
-            }
-
-            return builder::library_type_value(builder::tuple({*p.expression(), dir}), "spicy_rt::ParserPort");
-        });
-
-        Expression parse1 = builder::null();
-        Expression parse3 = builder::null();
-
-        // Only create `parse1` and `parse3` if the unit can be default constructed.
-        const auto& parameters = unit.parameters();
-        if ( std::all_of(parameters.begin(), parameters.end(), [](const auto& p) { return p.default_(); }) ) {
-            parse1 = _pb.parseMethodExternalOverload1(unit);
-            parse3 = _pb.parseMethodExternalOverload3(unit);
+            else if ( resp && ! orig )
+                dir = builder::id("spicy_rt::Direction::Responder");
         }
 
-        Expression context_new = builder::null();
+        return builder::library_type_value(builder::tuple({*p.expression(), dir}), "spicy_rt::ParserPort");
+    });
 
-        if ( unit.contextType() )
-            context_new = _pb.contextNewFunction(unit);
+    Expression parse1 = builder::null();
+    Expression parse3 = builder::null();
 
-        auto parser =
-            builder::struct_({{ID("name"), builder::string(*unit.typeID())},
-                              {ID("parse1"), parse1},
-                              {ID("parse2"), _pb.parseMethodExternalOverload2(unit)},
-                              {ID("parse3"), parse3},
-                              {ID("context_new"), context_new},
-                              {ID("type_info"), builder::typeinfo(unit)},
-                              {ID("description"), (description ? *description->expression() : builder::string(""))},
-                              {ID("mime_types"),
-                               builder::vector(builder::typeByID("spicy_rt::MIMEType"), std::move(mime_types))},
-                              {ID("ports"),
-                               builder::vector(builder::typeByID("spicy_rt::ParserPort"), std::move(ports))}},
-                             unit.meta());
-
-        builder.addAssign(builder::id(ID(*unit.typeID(), "__parser")), parser);
-
-        if ( unit.isPublic() )
-            builder.addExpression(
-                builder::call("spicy_rt::registerParser",
-                              {builder::id(ID(*unit.typeID(), "__parser")), builder::call("hilti::linker_scope", {}),
-                               builder::strong_reference(unit)}));
-
-        auto register_unit =
-            builder::function(ID(fmt("__register_%s", hilti::util::replace(*unit.typeID(), "::", "_"))), type::Void(),
-                              {}, builder.block(), type::function::Flavor::Standard, declaration::Linkage::Init);
-        addDeclaration(std::move(register_unit));
+    // Only create `parse1` and `parse3` if the unit can be default constructed.
+    const auto& parameters = unit.parameters();
+    if ( std::all_of(parameters.begin(), parameters.end(), [](const auto& p) { return p.default_(); }) ) {
+        parse1 = _pb.parseMethodExternalOverload1(unit);
+        parse3 = _pb.parseMethodExternalOverload3(unit);
     }
+
+    Expression context_new = builder::null();
+
+    if ( unit.contextType() )
+        context_new = _pb.contextNewFunction(unit);
+
+    auto parser =
+        builder::struct_({{ID("name"), builder::string(*unit.typeID())},
+                          {ID("is_public"), builder::bool_(unit.isPublic())},
+                          {ID("parse1"), parse1},
+                          {ID("parse2"), _pb.parseMethodExternalOverload2(unit)},
+                          {ID("parse3"), parse3},
+                          {ID("context_new"), context_new},
+                          {ID("type_info"), builder::typeinfo(unit)},
+                          {ID("description"), (description ? *description->expression() : builder::string(""))},
+                          {ID("mime_types"),
+                           builder::vector(builder::typeByID("spicy_rt::MIMEType"), std::move(mime_types))},
+                          {ID("ports"), builder::vector(builder::typeByID("spicy_rt::ParserPort"), std::move(ports))}},
+                         unit.meta());
+
+    builder.addAssign(builder::id(ID(*unit.typeID(), "__parser")), parser);
+
+    builder.addExpression(builder::call("spicy_rt::registerParser",
+                                        {builder::id(ID(*unit.typeID(), "__parser")),
+                                         builder::call("hilti::linker_scope", {}), builder::strong_reference(unit)}));
+
+    auto register_unit =
+        builder::function(ID(fmt("__register_%s", hilti::util::replace(*unit.typeID(), "::", "_"))), type::Void(), {},
+                          builder.block(), type::function::Flavor::Standard, declaration::Linkage::Init);
+    addDeclaration(std::move(register_unit));
 
     s.setOriginalNode(preserveNode(unit));
     return s;
