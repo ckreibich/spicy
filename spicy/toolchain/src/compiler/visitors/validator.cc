@@ -776,9 +776,6 @@ struct PreservedVisitor : public hilti::visitor::PreOrder<void, PreservedVisitor
     }
 
     void operator()(const operator_::unit::ConnectFilter& n, position_t p) {
-        if ( auto x = n.op0().type().originalNode()->tryAs<type::Unit>(); x && ! x->supportsFilters() )
-            error("unit type does not support filters", p);
-
         if ( auto y = methodArgument(n, 0)
                           .type()
                           .as<type::StrongReference>()
