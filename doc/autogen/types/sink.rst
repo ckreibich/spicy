@@ -32,21 +32,27 @@
     sink. If data has already been written when a filter is added, an
     error is triggered.
 
-.. spicy:method:: sink::connect_mime_type sink connect_mime_type False void (inout mt: bytes)
+.. spicy:method:: sink::connect_mime_type sink connect_mime_type False void (inout mt: bytes, scope: string = hilti::linker_scope())
 
     Connects parsing units to a sink for all parsers that support a given
-    MIME type. All subsequent write operations to the sink will pass their
-    data on to these parsing units. The MIME type may have wildcards for
-    type or subtype, and the method will then connect units for all
-    matching parsers.
+    MIME type. In order for parsers to be included they should either be
+    ``public``, or have a linker scope matching the passed ``scope``; if
+    no ``scope`` is given all ``public`` parsers and all parsers compiled
+    together are considered. All subsequent write operations to the sink
+    will pass their data on to these parsing units. The MIME type may have
+    wildcards for type or subtype, and the method will then connect units
+    for all matching parsers.
 
-.. spicy:method:: sink::connect_mime_type sink connect_mime_type False void (mt: string)
+.. spicy:method:: sink::connect_mime_type sink connect_mime_type False void (mt: string, scope: string = hilti::linker_scope())
 
     Connects parsing units to a sink for all parsers that support a given
-    MIME type. All subsequent write operations to the sink will pass their
-    data on to these parsing units. The MIME type may have wildcards for
-    type or subtype, and the method will then connect units for all
-    matching parsers.
+    MIME type. In order for parsers to be included they should either be
+    ``public``, or have a linker scope matching the passed ``scope``; if
+    no ``scope`` is given all ``public`` parsers and all parsers compiled
+    together are considered. All subsequent write operations to the sink
+    will pass their data on to these parsing units. The MIME type may have
+    wildcards for type or subtype, and the method will then connect units
+    for all matching parsers.
 
 .. spicy:method:: sink::gap sink gap False void (seq: uint<64>, len: uint<64>)
 

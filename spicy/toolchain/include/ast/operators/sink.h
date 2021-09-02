@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <hilti/ast/builder/expression.h>
 #include <hilti/ast/operator.h>
 #include <hilti/ast/operators/common.h>
 #include <hilti/ast/types/bool.h>
@@ -64,12 +65,18 @@ BEGIN_METHOD(sink, ConnectMIMETypeString)
         return hilti::operator_::Signature{.self = spicy::type::Sink(),
                                            .result = type::Void(),
                                            .id = "connect_mime_type",
-                                           .args = {{.id = "mt", .type = type::String()}},
+                                           .args = {{.id = "mt", .type = type::String()},
+                                                    {.id = "scope",
+                                                     .type = type::String(),
+                                                     .default_ = hilti::builder::call("hilti::linker_scope", {})}},
                                            .doc = R"(
 Connects parsing units to a sink for all parsers that support a given MIME
-type. All subsequent write operations to the sink will pass their data on to
-these parsing units. The MIME type may have wildcards for type or subtype, and
-the method will then connect units for all matching parsers.
+type. In order for parsers to be included they should either be ``public``, or
+have a linker scope matching the passed ``scope``; if no ``scope`` is given all
+``public`` parsers and all parsers compiled together are considered. All
+subsequent write operations to the sink will pass their data on to these
+parsing units. The MIME type may have wildcards for type or subtype, and the
+method will then connect units for all matching parsers.
 )"};
     }
 END_METHOD
@@ -79,12 +86,18 @@ BEGIN_METHOD(sink, ConnectMIMETypeBytes)
         return hilti::operator_::Signature{.self = spicy::type::Sink(),
                                            .result = type::Void(),
                                            .id = "connect_mime_type",
-                                           .args = {{.id = "mt", .type = type::Bytes()}},
+                                           .args = {{.id = "mt", .type = type::Bytes()},
+                                                    {.id = "scope",
+                                                     .type = type::String(),
+                                                     .default_ = hilti::builder::call("hilti::linker_scope", {})}},
                                            .doc = R"(
 Connects parsing units to a sink for all parsers that support a given MIME
-type. All subsequent write operations to the sink will pass their data on to
-these parsing units. The MIME type may have wildcards for type or subtype, and
-the method will then connect units for all matching parsers.
+type. In order for parsers to be included they should either be ``public``, or
+have a linker scope matching the passed ``scope``; if no ``scope`` is given all
+``public`` parsers and all parsers compiled together are considered. All
+subsequent write operations to the sink will pass their data on to these
+parsing units. The MIME type may have wildcards for type or subtype, and the
+method will then connect units for all matching parsers.
 )"};
     }
 END_METHOD
