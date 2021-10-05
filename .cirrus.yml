@@ -750,8 +750,6 @@ docker_fedora33_task:
     type: application/gzip
 
 docker_fedora34_task:
-  skip: $CIRRUS_BRANCH != 'main' && $CIRRUS_TAG == ''
-
   container:
     dockerfile: docker/Dockerfile.fedora-34
     cpu: 4
