@@ -634,7 +634,7 @@ docker_fedora38_task:
     type: application/gzip
 
 docker_fedora39_task:
-  skip: $CIRRUS_BRANCH != 'main' && $CIRRUS_TAG == ''
+  #skip: $CIRRUS_BRANCH != 'main' && $CIRRUS_TAG == ''
 
   container:
     dockerfile: docker/Dockerfile.fedora-39
@@ -671,7 +671,7 @@ docker_fedora39_task:
     type: application/gzip
 
 docker_opensuse15_5_task:
-  skip: $CIRRUS_BRANCH != 'main' && $CIRRUS_TAG == ''
+  #skip: $CIRRUS_BRANCH != 'main' && $CIRRUS_TAG == ''
 
   container:
     dockerfile: docker/Dockerfile.opensuse-15.5
